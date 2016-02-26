@@ -8,8 +8,8 @@ public class RouterNode {
   private int infinity = RouterSimulator.INFINITY;
   private int networkNodes = RouterSimulator.NUM_NODES;               // number of nodes in the array
 
-	private int[] costs = new int[RouterSimulator.NUM_NODES];
-  private int[] routes = new int[RouterSimulator.NUM_NODES];
+	private int[] costs = new int[RouterSimulator.NUM_NODES];           // costs to destination
+  private int[] routes = new int[RouterSimulator.NUM_NODES];          // next hop to take
 	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES];
   
   //------------------------------------------------- constructor
@@ -42,7 +42,7 @@ public class RouterNode {
   public void recvUpdate(RouterPacket pkt) {
       int destID = pkt.destid; 
       int[] mincost = pkt.mincost;
-      boolean changed = false; 
+      boolean triggerUpdate = false; 
       if (nodeID == destID)
       {
         for (int node = 0; node < costs.length; ++node) 
@@ -50,19 +50,18 @@ public class RouterNode {
           if (costs[node] != mincost[node]) 
           {
             updateLinkCost(node, mincost[node]);
-            changed = true; 
+            triggerUpdate = true; 
           }
         }
       }
       System.out.println(pkt.sourceid + " -> recvUpdate {destid:" + pkt.destid + "; mincost: [" 
           + pkt.mincost[0] + "," + pkt.mincost[1] + "," + pkt.mincost[2] +"]");
 
-      if (changed) 
+      if (triggerUpdate) 
       {
         broadcastTable(); 
       }
-  }
-  
+  }  
 
   //--------------------------------------------------
   private void sendUpdate(RouterPacket pkt) {
@@ -109,7 +108,7 @@ public class RouterNode {
 	  }
     myGUI.println();
 
-    myGUI.print("routes");
+    myGUI.print("through node");
     String out = ""; 
 	  for (int r : routes)
     {
