@@ -17,15 +17,16 @@ public class RouterNode {
     nodeID = ID;
     this.sim = sim;
     myGUI =new GuiTextArea("  Output window for Router #"+ ID + "  ");
-    for (int x = 0; x < networkNodes; ++x) {
-      if (x != nodeID)
+    for (int node = 0; node < networkNodes; ++node) {
+      if (node != nodeID)
       {  
-        for (int z = 0; z < networkNodes; ++z) 
+        for (int neighbor = 0; neighbor < networkNodes; ++neighbor) 
         {
-          table[x][z] = (x == z) ? 0 : infinity;  // set to infinity if x == z else set 0
+          table[node][neighbor] = (node == neighbor) ? 0 : infinity;  // set to infinity if x == z else set 0
         }
       }
     }
+    //System.arraycopy(src, srcPos, dest, destPos, length) 
     System.arraycopy(costs, 0, table[nodeID], 0, RouterSimulator.NUM_NODES);
     System.arraycopy(costs, 0, this.costs, 0, RouterSimulator.NUM_NODES);
 
@@ -39,7 +40,27 @@ public class RouterNode {
 
   //--------------------------------------------------
   public void recvUpdate(RouterPacket pkt) {
-    System.out.println("recvUpdate ->" + pkt);
+      int destID = pkt.destid; 
+      int[] mincost = pkt.mincost;
+      boolean changed = false; 
+      if (nodeID == destID)
+      {
+        for (int node = 0; node < costs.length; ++node) 
+        {
+          if (costs[node] != mincost[node]) 
+          {
+            updateLinkCost(node, mincost[node]);
+            changed = true; 
+          }
+        }
+      }
+      System.out.println(pkt.sourceid + " -> recvUpdate {destid:" + pkt.destid + "; mincost: [" 
+          + pkt.mincost[0] + "," + pkt.mincost[1] + "," + pkt.mincost[2] +"]");
+
+      if (changed) 
+      {
+        broadcastTable(); 
+      }
   }
   
 
@@ -56,20 +77,20 @@ public class RouterNode {
     String rowDivider = ""; 
     myGUI.println();
     myGUI.print("nodes\t");
-    for (int x = 0; x < networkNodes; ++x) 
+    for (int node = 0; node < networkNodes; ++node) 
     {
-      myGUI.print(x+"\t"); 
+      myGUI.print(node+"\t"); 
       rowDivider += "===========";
     }
     myGUI.println(); 
     myGUI.println(rowDivider);
 
-    for(int y = 0; y < networkNodes; ++y){
-		  if (y != nodeID)
+    for(int node = 0; node < networkNodes; ++node){
+		  if (node != nodeID)
 		  {
-			  myGUI.print("node " + y + "\t");
-			  for (int z = 0; z < networkNodes; ++z){
-          String value = Integer.toString(table[y][z]);
+			  myGUI.print("node " + node + "\t");
+			  for (int neighbor = 0; neighbor < networkNodes; ++neighbor){
+          String value = Integer.toString(table[node][neighbor]);
           if (value.equals("999")) 
           {
             value = "-";
@@ -108,18 +129,19 @@ public class RouterNode {
   //--------------------------------------------------
   public void updateLinkCost(int dest, int newcost) {
     System.out.println("node[" +nodeID + "]-> updateLinkCost{" + dest + "=" + newcost + "}");
-    costs[dest] = newcost;
-    broadcastTable();
+    costs[dest] = newcost; // set the new cost
+    //broadcastTable(); // send a update out
   }
 
   //--------------------------------------------------
   public void broadcastTable() {
-
-    for (int n = 0; n < networkNodes; ++n) 
+    for (int node = 0; node < networkNodes; ++node) 
     {
-      if (n != nodeID && costs[n] != infinity) 
+      // only send to others and if not infinity route
+      if (node != nodeID && costs[node] != infinity) 
       {
-        RouterPacket pkt = new RouterPacket(nodeID, n, table[nodeID]);
+        //RouterPacket (int sourceID, int destID, int[] mincosts)
+        RouterPacket pkt = new RouterPacket(nodeID, node, costs);
         sendUpdate(pkt);
       }
     }
