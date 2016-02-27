@@ -40,27 +40,69 @@ public class RouterNode {
 
   //--------------------------------------------------
   public void recvUpdate(RouterPacket pkt) {
-      int destID = pkt.destid; 
+      int source = pkt.sourceid;
+      int dest = pkt.destid; 
       int[] mincost = pkt.mincost;
       boolean triggerUpdate = false; 
-      if (nodeID == destID)
+      boolean neighbourUpdate = false;
+
+      for (int node = 0; node < networkNodes; ++node)
       {
-        for (int node = 0; node < costs.length; ++node) 
+        if (table[source][node] != mincost[node])
         {
-          if (costs[node] != mincost[node]) 
+          table[source][node] = mincost[node]; 
+          neighbourUpdate = true;
+        }
+      }
+
+      if (neighbourUpdate) 
+      {
+        for (int node = 0; node < networkNodes; ++node) 
+        {
+          if (node != nodeID) 
           {
-            updateLinkCost(node, mincost[node]);
-            triggerUpdate = true; 
+            int oldCost = table[nodeID][node];
+            int currentCost = table[routes[node]][node] + table[nodeID][routes[node]];
+
+            if (oldCost != currentCost) 
+            {
+              table[nodeID][node] = currentCost;
+              triggerUpdate = true;
+            }
+        
+            int routeCost = table[nodeID][node]; 
+            int directCost = costs[node]; 
+
+            if (directCost < routeCost) 
+            {
+              table[nodeID][node] = costs[node];
+              routes[node] = node; 
+              triggerUpdate = true;
+            }
+
+            for (int x = 0; x < networkNodes; ++x)
+            {
+              int ourRouteCost = table[nodeID][x]; 
+              int otherRouteCost = table[nodeID][node] + table[node][x];
+
+              if (ourRouteCost < otherRouteCost) 
+              {
+                table[nodeID][x] = otherRouteCost;
+                routes[x] = routes[node]; 
+                triggerUpdate = true;
+              }
+            }
           }
+        }
+
+        if (triggerUpdate) 
+        {
+          broadcastTable();
         }
       }
       System.out.println(pkt.sourceid + " -> recvUpdate {destid:" + pkt.destid + "; mincost: [" 
           + pkt.mincost[0] + "," + pkt.mincost[1] + "," + pkt.mincost[2] +"]");
 
-      if (triggerUpdate) 
-      {
-        broadcastTable(); 
-      }
   }  
 
   //--------------------------------------------------
@@ -104,14 +146,21 @@ public class RouterNode {
     myGUI.print("cost");
     for (int c : costs)
     {
-		  myGUI.print("\t" + c);  
+      String out = "";
+      if (c == 0) 
+      {
+        out = "-"; 
+      } else {
+        out = Integer.toString(c);
+      }
+		  myGUI.print("\t" + out);  
 	  }
     myGUI.println();
 
     myGUI.print("through node");
-    String out = ""; 
 	  for (int r : routes)
     {
+      String out = ""; 
       if (r == nodeID)
       {
         out = "-";
@@ -127,9 +176,28 @@ public class RouterNode {
 
   //--------------------------------------------------
   public void updateLinkCost(int dest, int newcost) {
-    System.out.println("node[" +nodeID + "]-> updateLinkCost{" + dest + "=" + newcost + "}");
     costs[dest] = newcost; // set the new cost
-    //broadcastTable(); // send a update out
+    if (routes[dest] == dest)
+    {
+      table[nodeID][dest] = newcost; 
+    }
+
+    if (costs[dest] < table[nodeID][dest])
+    {
+      table[nodeID][dest] = costs[dest]; 
+      routes[dest] = dest; 
+    }
+
+    for (int node = 0; node < networkNodes; ++node)
+    {
+      if (table[nodeID][node] > table[nodeID][dest] + table[dest][node])
+      {
+        table[nodeID][node] = table[nodeID][dest] + table[dest][node];
+        routes[node] = routes[dest]; 
+      }
+    }
+    System.out.println("node[" +nodeID + "]-> updateLinkCost{" + dest + "=" + newcost + "}");
+    broadcastTable(); // send a update out
   }
 
   //--------------------------------------------------
