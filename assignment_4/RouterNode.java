@@ -17,7 +17,6 @@ public class RouterNode {
   private boolean poisonReverse = true;
   private boolean debug = true; 
 
-  
   //-------------------------------------------------
   public RouterNode(int ID, RouterSimulator sim, int[] costs) {
     nodeID = ID;
@@ -155,7 +154,6 @@ public class RouterNode {
     sim.toLayer2(pkt);
   }
   
-
   //--------------------------------------------------
   public void printDistanceTable() {
     myGUI.println(); 
@@ -186,13 +184,26 @@ public class RouterNode {
     
     myGUI.println();
     myGUI.println(rowDivider);
+    printCost();  // print the cost
+    printRoute(); // print the route
+    myGUI.println();
+    myGUI.println();
+  }
+  
+  //--------------------------------------------------
+  public void printCost()
+  {
     myGUI.print("cost:");
     for (int c : costs)
     {
 		  myGUI.print("\t" + c);  
 	  }
     myGUI.println();
+  }
 
+  //--------------------------------------------------
+  public void printRoute() 
+  {
     myGUI.print("route:");
 	  for (int r : routes)
     {
@@ -205,19 +216,19 @@ public class RouterNode {
       }
       myGUI.print(out);
 	  }
-
-    myGUI.println();
-    myGUI.println();
   }
 
   //--------------------------------------------------
   public void updateLinkCost(int dest, int newcost) {
-    costs[dest] = newcost; // set the new cost
+    costs[dest] = newcost;
+    
+    // if we are routing through the changed link.
     if (routes[dest] == dest)
     {
       table[nodeID][dest] = newcost; 
     }
 
+    // if direct routing is less then through relay. 
     if (costs[dest] < table[nodeID][dest])
     {
       table[nodeID][dest] = costs[dest]; 
@@ -238,7 +249,6 @@ public class RouterNode {
 
   //--------------------------------------------------
   public void broadcastTable() {
-
     for (int node = 0; node < networkNodes; ++node) 
     {
       if (node != nodeID && costs[node] != infinity) 
