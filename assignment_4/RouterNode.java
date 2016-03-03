@@ -15,7 +15,7 @@ public class RouterNode {
   private int[] routes = new int[RouterSimulator.NUM_NODES];          // next hop to take
 	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES]; //This is the table
   private boolean poisonReverse = true;
-  private boolean debug = true; 
+  private boolean debug = false; 
 
   //-------------------------------------------------
   public RouterNode(int ID, RouterSimulator sim, int[] costs) {
@@ -23,14 +23,12 @@ public class RouterNode {
     this.sim = sim;
     myGUI =new GuiTextArea("  Output window for Router #"+ ID + "  ");
     
-    // Construct the table: [0, 4, 1][999, 0, 999][999, 999, 0]
     for (int node = 0; node < networkNodes; ++node) {
       if (node != nodeID)
       {  
         for (int neighbor = 0; neighbor < networkNodes; ++neighbor) 
         {
-          // if node is a neighbor set value to 0 else set to infinity. 
-          table[node][neighbor] = (node == neighbor) ? 0 : infinity;          
+          // table[node][neighbor] = (node == neighbor) ? 0 : infinity;          
         }
       }
     }
@@ -89,9 +87,8 @@ public class RouterNode {
 
       for (int node = 0; node < networkNodes; ++node)
       {
-        // If any changes in neighboring nodes table, then save the new costs. 
         if (table[source][node] != mincost[node]) 
-        {
+        {	
           table[source][node] = mincost[node]; 
           neighbourUpdate = true;
         }
@@ -133,7 +130,7 @@ public class RouterNode {
                 routes[x] = routes[node]; 
                 triggerUpdate = true;
               }
-            }
+            }	
           }
         }
 
@@ -172,7 +169,7 @@ public class RouterNode {
     myGUI.println(rowDivider);
 
     for(int node = 0; node < networkNodes; ++node){
-		  if (node != nodeID || false)
+		  if (node != nodeID || false)	
 		  {
 			  myGUI.print("nbr " + node + ":\t");
 			  for (int neighbor = 0; neighbor < networkNodes; ++neighbor){
@@ -194,10 +191,10 @@ public class RouterNode {
   public void printCost()
   {
     myGUI.print("cost:");
-    for (int c : costs)
-    {
-		  myGUI.print("\t" + c);  
-	  }
+		for (int i=0; networkNodes > i; ++i) 
+		{
+			myGUI.print("\t" + table[nodeID][i]);
+		}
     myGUI.println();
   }
 
