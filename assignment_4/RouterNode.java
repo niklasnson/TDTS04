@@ -1,4 +1,7 @@
 import javax.swing.*;    
+import java.util.Arrays;
+//System.out.println(Arrays.toString(Array));
+
 
 public class RouterNode {
   private int nodeID;
@@ -10,32 +13,71 @@ public class RouterNode {
 
 	private int[] costs = new int[RouterSimulator.NUM_NODES];           // costs to destination
   private int[] routes = new int[RouterSimulator.NUM_NODES];          // next hop to take
-	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES];
+	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES]; //This is the table
+  private boolean poisonReverse = true;
+  private boolean debug = true; 
+
   
-  //------------------------------------------------- constructor
+  //-------------------------------------------------
   public RouterNode(int ID, RouterSimulator sim, int[] costs) {
     nodeID = ID;
     this.sim = sim;
     myGUI =new GuiTextArea("  Output window for Router #"+ ID + "  ");
+    
+    // Construct the table: [0, 4, 1][999, 0, 999][999, 999, 0]
     for (int node = 0; node < networkNodes; ++node) {
       if (node != nodeID)
       {  
         for (int neighbor = 0; neighbor < networkNodes; ++neighbor) 
         {
-          table[node][neighbor] = (node == neighbor) ? 0 : infinity;  // set to infinity if x == z else set 0
+          // if node is a neighbor set value to 0 else set to infinity. 
+          table[node][neighbor] = (node == neighbor) ? 0 : infinity;          
         }
       }
     }
+
     //System.arraycopy(src, srcPos, dest, destPos, length) 
     System.arraycopy(costs, 0, table[nodeID], 0, RouterSimulator.NUM_NODES);
     System.arraycopy(costs, 0, this.costs, 0, RouterSimulator.NUM_NODES);
 
-    for (int route = 0; route < costs.length; ++route){
-    	routes[route] = (costs[route] != infinity) ? route : infinity;
-    }
+    createRoutesTable();
+    
+    if (debug) 
+    {
+	    System.out.println();
+      System.out.println("init: nbr" + nodeID); 
+    
+      System.out.print("[ costs:\t");
+      for (int c:costs){
+	      System.out.print(c + " ");
+	    }
+      System.out.printf("]\n");
 
+      System.out.print("[ routes:\t");
+	    for (int r:routes){
+	      System.out.print(r + " ");
+	    }
+      System.out.printf("]\n");
+      System.out.print("[ table: \t");
+	    for (int m:table[nodeID]){
+	      System.out.print(m + " ");
+	    }
+	    System.out.println("]\n");
+    }
     printDistanceTable();
     broadcastTable();
+  }
+
+  // create the routes table, this contains the next hop to take.  
+  private void createRoutesTable()
+  {
+    for (int route = 0; route < costs.length; ++route){
+      int cost = costs[route];
+      if (cost < infinity) 
+      {
+        routes[route] = route;
+      }
+    }
   }
 
   //--------------------------------------------------
@@ -48,7 +90,8 @@ public class RouterNode {
 
       for (int node = 0; node < networkNodes; ++node)
       {
-        if (table[source][node] != mincost[node])
+        // If any changes in neighboring nodes table, then save the new costs. 
+        if (table[source][node] != mincost[node]) 
         {
           table[source][node] = mincost[node]; 
           neighbourUpdate = true;
@@ -70,8 +113,8 @@ public class RouterNode {
               triggerUpdate = true;
             }
         
-            int routeCost = table[nodeID][node]; 
-            int directCost = costs[node]; 
+            int routeCost = table[nodeID][node];      // cost via route to target.  
+            int directCost = costs[node];             // cost directly with target.
 
             if (directCost < routeCost) 
             {
@@ -80,12 +123,12 @@ public class RouterNode {
               triggerUpdate = true;
             }
 
-            for (int x = 0; x < networkNodes; ++x)
+            for (int x=0; x < networkNodes; ++x)
             {
               int ourRouteCost = table[nodeID][x]; 
               int otherRouteCost = table[nodeID][node] + table[node][x];
 
-              if (ourRouteCost < otherRouteCost) 
+              if (ourRouteCost > otherRouteCost) 
               {
                 table[nodeID][x] = otherRouteCost;
                 routes[x] = routes[node]; 
@@ -100,9 +143,11 @@ public class RouterNode {
           broadcastTable();
         }
       }
-      System.out.println(pkt.sourceid + " -> recvUpdate {destid:" + pkt.destid + "; mincost: [" 
-          + pkt.mincost[0] + "," + pkt.mincost[1] + "," + pkt.mincost[2] +"]");
-
+      if (debug) 
+      {
+        System.out.println("nbr " +pkt.sourceid + " => recvUpdate \t{ destid:" + pkt.destid + "; mincost: [" 
+            + pkt.mincost[0] + "," + pkt.mincost[1] + "," + pkt.mincost[2] +"] }");
+      }
   }  
 
   //--------------------------------------------------
@@ -113,61 +158,52 @@ public class RouterNode {
 
   //--------------------------------------------------
   public void printDistanceTable() {
+    myGUI.println(); 
+    myGUI.println();
 	  myGUI.println("Current table for " + nodeID + "  at time " + sim.getClocktime());
 
     String rowDivider = ""; 
     myGUI.println();
-    myGUI.print("nodes\t");
+    myGUI.print(" dst: \t");
     for (int node = 0; node < networkNodes; ++node) 
     {
       myGUI.print(node+"\t"); 
-      rowDivider += "===========";
+      rowDivider += "=============";
     }
     myGUI.println(); 
     myGUI.println(rowDivider);
 
     for(int node = 0; node < networkNodes; ++node){
-		  if (node != nodeID)
+		  if (node != nodeID || false)
 		  {
-			  myGUI.print("node " + node + "\t");
+			  myGUI.print("nbr " + node + ":\t");
 			  for (int neighbor = 0; neighbor < networkNodes; ++neighbor){
-          String value = Integer.toString(table[node][neighbor]);
-          if (value.equals("999")) 
-          {
-            value = "-";
-          }
-				  myGUI.print(value + "\t");
+				  myGUI.print(table[node][neighbor] + "\t");
 			  }
 			  myGUI.println();
 		  }
 	  }
-
+    
     myGUI.println();
-    myGUI.print("cost");
+    myGUI.println(rowDivider);
+    myGUI.print("cost:");
     for (int c : costs)
     {
-      String out = "";
-      if (c == 0) 
-      {
-        out = "-"; 
-      } else {
-        out = Integer.toString(c);
-      }
-		  myGUI.print("\t" + out);  
+		  myGUI.print("\t" + c);  
 	  }
     myGUI.println();
 
-    myGUI.print("through node");
+    myGUI.print("route:");
 	  for (int r : routes)
     {
-      String out = ""; 
-      if (r == nodeID)
+      String out; 
+      if (r == 999) 
       {
-        out = "-";
+        out = "\t-";
       } else {
-        out = Integer.toString(r);
+        out = "\t" + r;
       }
-      myGUI.print("\t" + out);
+      myGUI.print(out);
 	  }
 
     myGUI.println();
@@ -192,26 +228,33 @@ public class RouterNode {
     {
       if (table[nodeID][node] > table[nodeID][dest] + table[dest][node])
       {
-        table[nodeID][node] = table[nodeID][dest] + table[dest][node];
+        table[nodeID][node] = (table[nodeID][dest] + table[dest][node]);
         routes[node] = routes[dest]; 
-      }
+       }
     }
-    System.out.println("node[" +nodeID + "]-> updateLinkCost{" + dest + "=" + newcost + "}");
+    System.out.println("nbr " + nodeID + " => updateLinkCost \t{ destid: " + dest + "; mincost: " + newcost + " }");
     broadcastTable(); // send a update out
   }
 
   //--------------------------------------------------
   public void broadcastTable() {
+
     for (int node = 0; node < networkNodes; ++node) 
     {
-      // only send to others and if not infinity route
       if (node != nodeID && costs[node] != infinity) 
       {
-        //RouterPacket (int sourceID, int destID, int[] mincosts)
-        RouterPacket pkt = new RouterPacket(nodeID, node, costs);
+        RouterPacket pkt = new RouterPacket(nodeID, node, costs);        
+        if (poisonReverse) 
+        {
+          int[] posionTable = new int[networkNodes];
+          for (int i=0; i < networkNodes; ++i) 
+          {
+            posionTable[i] = (routes[i] == node) ? infinity : table[nodeID][i];
+          }
+          pkt = new RouterPacket(nodeID, node, posionTable); 
+        }
         sendUpdate(pkt);
       }
     }
   }
-
 }
