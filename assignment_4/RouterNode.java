@@ -9,15 +9,12 @@ public class RouterNode {
   private RouterSimulator sim;
 
   private int infinity = RouterSimulator.INFINITY;
-  // number of nodes in the array
   private int networkNodes = RouterSimulator.NUM_NODES;
-  // costs to destination
 	private int[] costs = new int[RouterSimulator.NUM_NODES];
-  // next hop to take
   private int[] routes = new int[RouterSimulator.NUM_NODES];         
-  // this is the table
   private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES]; 
-  private boolean poisonReverse = true;
+  
+	private boolean poisonReverse = true;
   private boolean debug = false; 
   private boolean neighbourList = true; 
 
@@ -61,6 +58,7 @@ public class RouterNode {
       boolean triggerUpdate = false; 
       boolean neighbourUpdate = false;
 
+			// are we getting a update from a neightbour ? 
       for (int node = 0; node < networkNodes; ++node)
       {
         if (table[source][node] != mincost[node]) 
@@ -78,7 +76,7 @@ public class RouterNode {
           {
             int oldCost = table[nodeID][node];
             int currentCost = table[routes[node]][node] + table[nodeID][routes[node]];
-
+						// the cost has changed. 
             if (oldCost != currentCost) 
             {
               table[nodeID][node] = currentCost;
@@ -87,15 +85,17 @@ public class RouterNode {
         
             int routeCost = table[nodeID][node];      // cost via route to target.  
             int directCost = costs[node];             // cost directly with target.
-
-            if (directCost < routeCost) 
+						
+            // if the routeCost is lower then the direct cost. set routing via that node.  
+						if (routeCost < directCost) 
             {
               table[nodeID][node] = costs[node];
               routes[node] = node; 
               triggerUpdate = true;
             }
 
-            for (int x=0; x < networkNodes; ++x)
+            // update the tables with the new information.  
+						for (int x=0; x < networkNodes; ++x)
             {
               int ourRouteCost = table[nodeID][x]; 
               int otherRouteCost = table[nodeID][node] + table[node][x];
@@ -207,6 +207,8 @@ public class RouterNode {
 
     for (int node = 0; node < networkNodes; ++node)
     {
+			// if my cost to node is larger then ( cost to route + cost to destination ) 
+			// set up routing via the that node.  
       if (table[nodeID][node] > table[nodeID][dest] + table[dest][node])
       {
         table[nodeID][node] = (table[nodeID][dest] + table[dest][node]);
@@ -219,7 +221,8 @@ public class RouterNode {
   public void broadcastTable() {
     for (int node = 0; node < networkNodes; ++node) 
     {
-      if (node != nodeID && costs[node] != infinity) 
+      // send out the costs we have to the other nodes. 
+			if (node != nodeID && costs[node] != infinity) 
       {
         RouterPacket pkt = new RouterPacket(nodeID, node, costs); 
         if (poisonReverse) 
@@ -235,6 +238,21 @@ public class RouterNode {
       }
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   public void debugInit() {
     if (debug) 
