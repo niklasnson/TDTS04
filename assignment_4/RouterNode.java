@@ -9,15 +9,18 @@ public class RouterNode {
   private RouterSimulator sim;
 
   private int infinity = RouterSimulator.INFINITY;
-  private int networkNodes = RouterSimulator.NUM_NODES;               // number of nodes in the array
-
-	private int[] costs = new int[RouterSimulator.NUM_NODES];           // costs to destination
-  private int[] routes = new int[RouterSimulator.NUM_NODES];          // next hop to take
-	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES]; //This is the table
+  // number of nodes in the array
+  private int networkNodes = RouterSimulator.NUM_NODES;
+  // costs to destination
+	private int[] costs = new int[RouterSimulator.NUM_NODES];
+  // next hop to take
+  private int[] routes = new int[RouterSimulator.NUM_NODES];         
+  // this is the table
+  private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES]; 
   private boolean poisonReverse = true;
   private boolean debug = false; 
+  private boolean neighbourList = true; 
 
-  //-------------------------------------------------
   public RouterNode(int ID, RouterSimulator sim, int[] costs) {
     nodeID = ID;
     this.sim = sim;
@@ -28,46 +31,20 @@ public class RouterNode {
       {  
         for (int neighbor = 0; neighbor < networkNodes; ++neighbor) 
         {
-          // table[node][neighbor] = (node == neighbor) ? 0 : infinity;          
+          table[node][neighbor] = (node == neighbor) ? 0 : infinity;          
         }
       }
     }
-
-    //System.arraycopy(src, srcPos, dest, destPos, length) 
     System.arraycopy(costs, 0, table[nodeID], 0, RouterSimulator.NUM_NODES);
     System.arraycopy(costs, 0, this.costs, 0, RouterSimulator.NUM_NODES);
 
     createRoutesTable();
-    
-    if (debug) 
-    {
-	    System.out.println();
-      System.out.println("init: nbr" + nodeID); 
-    
-      System.out.print("[ costs:\t");
-      for (int c:costs){
-	      System.out.print(c + " ");
-	    }
-      System.out.printf("]\n");
-
-      System.out.print("[ routes:\t");
-	    for (int r:routes){
-	      System.out.print(r + " ");
-	    }
-      System.out.printf("]\n");
-      System.out.print("[ table: \t");
-	    for (int m:table[nodeID]){
-	      System.out.print(m + " ");
-	    }
-	    System.out.println("]\n");
-    }
+    debugInit(); 
     printDistanceTable();
     broadcastTable();
   }
 
-  // create the routes table, this contains the next hop to take.  
-  private void createRoutesTable()
-  {
+  private void createRoutesTable() {
     for (int route = 0; route < costs.length; ++route){
       int cost = costs[route];
       if (cost < infinity) 
@@ -77,7 +54,6 @@ public class RouterNode {
     }
   }
 
-  //--------------------------------------------------
   public void recvUpdate(RouterPacket pkt) {
       int source = pkt.sourceid;
       int dest = pkt.destid; 
@@ -146,12 +122,10 @@ public class RouterNode {
       }
   }  
 
-  //--------------------------------------------------
   private void sendUpdate(RouterPacket pkt) {
     sim.toLayer2(pkt);
   }
   
-  //--------------------------------------------------
   public void printDistanceTable() {
     myGUI.println(); 
     myGUI.println();
@@ -165,18 +139,22 @@ public class RouterNode {
       myGUI.print(node+"\t"); 
       rowDivider += "=============";
     }
-    myGUI.println(); 
-    myGUI.println(rowDivider);
-
-    for(int node = 0; node < networkNodes; ++node){
-		  if (node != nodeID || false)	
-		  {
-			  myGUI.print("nbr " + node + ":\t");
-			  for (int neighbor = 0; neighbor < networkNodes; ++neighbor){
-				  myGUI.print(table[node][neighbor] + "\t");
-			  }
-			  myGUI.println();
-		  }
+    
+    if (neighbourList)
+    {
+      myGUI.println(); 
+      myGUI.println(rowDivider);
+      for(int node = 0; node < networkNodes; ++node){
+		    if (node != nodeID || false)	
+		    {
+			    myGUI.print("nbr " + node + ":\t");
+			    for (int i=0; networkNodes > i; ++i)
+          {
+				    myGUI.print(table[node][i] + "\t");
+			    }
+			    myGUI.println();
+		    }
+      }
 	  }
     
     myGUI.println();
@@ -187,9 +165,7 @@ public class RouterNode {
     myGUI.println();
   }
   
-  //--------------------------------------------------
-  public void printCost()
-  {
+  public void printCost(){
     myGUI.print("cost:");
 		for (int i=0; networkNodes > i; ++i) 
 		{
@@ -198,9 +174,7 @@ public class RouterNode {
     myGUI.println();
   }
 
-  //--------------------------------------------------
-  public void printRoute() 
-  {
+  public void printRoute() {
     myGUI.print("route:");
 	  for (int r : routes)
     {
@@ -215,7 +189,6 @@ public class RouterNode {
 	  }
   }
 
-  //--------------------------------------------------
   public void updateLinkCost(int dest, int newcost) {
     costs[dest] = newcost;
     
@@ -240,17 +213,15 @@ public class RouterNode {
         routes[node] = routes[dest]; 
        }
     }
-    System.out.println("nbr " + nodeID + " => updateLinkCost \t{ destid: " + dest + "; mincost: " + newcost + " }");
     broadcastTable(); // send a update out
   }
 
-  //--------------------------------------------------
   public void broadcastTable() {
     for (int node = 0; node < networkNodes; ++node) 
     {
       if (node != nodeID && costs[node] != infinity) 
       {
-        RouterPacket pkt = new RouterPacket(nodeID, node, costs);        
+        RouterPacket pkt = new RouterPacket(nodeID, node, costs); 
         if (poisonReverse) 
         {
           int[] posionTable = new int[networkNodes];
@@ -262,6 +233,31 @@ public class RouterNode {
         }
         sendUpdate(pkt);
       }
+    }
+  }
+
+  public void debugInit() {
+    if (debug) 
+    {
+	    System.out.println();
+      System.out.println("init: nbr" + nodeID); 
+    
+      System.out.print("[ costs:\t");
+      for (int c:costs){
+	      System.out.print(c + " ");
+	    }
+      System.out.printf("]\n");
+
+      System.out.print("[ routes:\t");
+	    for (int r:routes){
+	      System.out.print(r + " ");
+	    }
+      System.out.printf("]\n");
+      System.out.print("[ table: \t");
+	    for (int m:table[nodeID]){
+	      System.out.print(m + " ");
+	    }
+	    System.out.println("]\n");
     }
   }
 }
