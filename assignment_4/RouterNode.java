@@ -13,7 +13,7 @@ public class RouterNode {
 	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES];
 	private int[] route = new int[RouterSimulator.NUM_NODES];
   
-  private boolean poisonedReverse = true; 
+  private boolean poisonedReverse = false; 
 
   //--------------------------------------------------
   public RouterNode(int ID, RouterSimulator sim, int[] costs) {
@@ -24,7 +24,7 @@ public class RouterNode {
     System.arraycopy(costs, 0, this.costs, 0, num_network_nodes);
 
     // Initialize all distance vectors values to infinity
-    for (int i=0; i < num_network_nodes; ++i) 
+    for (int i=0; i < num_network_nodes; ++i)
     {
       for (int j=0; j < num_network_nodes; ++j) 
         table[i][j] = infinity;
@@ -49,19 +49,24 @@ public class RouterNode {
   //--------------------------------------------------
   public void recvUpdate(RouterPacket pkt) {
     System.arraycopy(pkt.mincost, 0, table[pkt.sourceid], 0, num_network_nodes);
+		// recalculate distance when we recive a update packet.	
 		recalculate_table();
   }
 
   private void recalculate_table() {
-    int[] newDistVector = new int[num_network_nodes];
+    // create a new vector for temp data. 
+		int[] newDistVector = new int[num_network_nodes];
 
     for (int i=0; i < num_network_nodes; ++i) 
     {
+			// check for the shortest path to a node. 
       int path = route[i] = find_shortest_path(i); 
-      if (path != infinity) 
+			if (path != infinity) 
       {
+				// if not a posined route update the settings. 
         newDistVector[i] = costs[path] + table[path][i];
       } else {
+				// if posiend route update to infinity. 
         newDistVector[i] = infinity; 
       }
     }
@@ -73,7 +78,7 @@ public class RouterNode {
   }
 
   private int find_shortest_path(int dest) {
-    int distance = costs[dest]; 
+    int distance = costs[dest];  // get the current distance table. 
     int path; 
 
     if (distance != infinity) 
@@ -83,6 +88,7 @@ public class RouterNode {
 
     for (int i=0; i < num_network_nodes; ++i)
     {
+			// if we are on current node or if current node is destination just keep rocking! 
       if (i == myID || i == dest)
         continue;
 
