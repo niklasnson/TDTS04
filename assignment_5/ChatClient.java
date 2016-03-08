@@ -8,6 +8,8 @@ import org.omg.PortableServer.POA;
 // -----------------------------------------------------------------------------------
 import java.util.Arrays; 
 import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 class ChatCallbackImpl extends ChatCallbackPOA
 {
@@ -63,11 +65,12 @@ public class ChatClient
 			
 			String usrInput; 
 			Scanner in = new Scanner(System.in);
-			// Setup the mainloop
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+			System.out.print("% "); 
 			do {
-				System.out.print("% "); 
-				usrInput = in.nextLine(); 
-				execute_command(cref, usrInput);				 
+
+				String command = br.readLine(); 				
+				execute_command(cref, command);				 
 			} while (true); 
 
 
