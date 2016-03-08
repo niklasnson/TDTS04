@@ -11,7 +11,10 @@ class ChatImpl extends ChatPOA
 {
 
 		ArrayList<String> userTable = new ArrayList<String>();
-		ArrayList<ChatCallback> callobjTable = new ArrayList<ChatCallback>(); 
+		ArrayList<ChatCallback> callobjTable = new ArrayList<ChatCallback>();
+		ArrayList<ChatCallback> teamEnlighten = new ArrayList<ChatCallback>(); 
+		ArrayList<ChatCallback> teamResistance = new ArrayList<ChatCallback>(); 
+	 	String [][] gameTable = new String[9][9];
 
     private ORB orb;
 
@@ -71,6 +74,81 @@ class ChatImpl extends ChatPOA
 				reciv.callback(sender + " said: " + msg);
 			}
 		}
+
+		public void quit(ChatCallback callobj) {
+		}
+
+		public void game(ChatCallback callobj, String data) {
+			String args[] = data.split(" "); 
+			if (args[0].equals("join") && args.length > 1) {
+				assignTeam(callobj, args[1]);
+			} else if (args[0].equals("hack") && args.length > 1 ) {
+				int x = Integer.parseInt(args[1]);
+				int y = Integer.parseInt(args[2]); 
+				if (x > -1 && x < 9 && y > -1 && y < 9 && gameTable[x][y] == null)
+				{
+						gameTable[x][y] = getSymbol(callobj);
+				}
+				renderTable();
+			}
+		}
+
+		private boolean hasWon() {
+ 			return false; 	
+		}
+
+		private void assignTeam(ChatCallback callobj, String team) {
+			boolean success = false; 
+			if (team.equals("enl"))  {
+				teamEnlighten.add(callobj);
+				callobj.callback("You joined the enlightend!"); 
+			} else if (team.equals("res")) {
+				teamResistance.add(callobj);
+				callobj.callback("You joined the resistance!");
+			}
+		}
+
+		private String getSymbol(ChatCallback callobj) {
+			if (teamResistance.contains(callobj))
+				return "R";
+			else if (teamEnlighten.contains(callobj)) 
+				return "E";
+			else
+				return "*"; 
+
+		}
+
+		private void renderTable() {
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.append("\n"); 
+			for (int y=0; y < 9; ++y) 
+			{
+				for (int x=0; x < 9; ++x) 
+				{
+					if (gameTable[y][x] == null) 
+						stringBuilder.append("* ");
+					else
+						stringBuilder.append(gameTable[y][x] + " ");
+				}
+				stringBuilder.append("\n");
+			}
+			if (hasWon()) {
+				stringBuilder.append("We have a winner!"); 
+			}
+
+			for (int i=0; i < teamResistance.size(); ++i)
+			{
+				ChatCallback reciv = teamResistance.get(i); 
+				reciv.callback(stringBuilder.toString());
+			}
+
+			for (int i=0; i < teamEnlighten.size(); ++i) 
+			{
+				ChatCallback reciv = teamEnlighten.get(i); 
+				reciv.callback(stringBuilder.toString());
+			}
+		}
+
 }
 
 public class ChatServer 

@@ -9,5 +9,7 @@ module ChatApp {
 			void list(in ChatCallback objref);
 			void leave(in ChatCallback objref);
 			void post(in ChatCallback objref, in string msg); 
+			void quit(in ChatCallback objref);
+			void game(in ChatCallback objref, in string data);
    };
 };

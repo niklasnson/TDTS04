@@ -89,8 +89,19 @@ public class ChatClient
 		} else if (args[0].equals("leave")) {
 			chatImpl.leave(cref); 
 		} else if (args[0].equals("post")) {
-			// alla args -> 1 -> slut.join.  
-			chatImpl.post(cref, args[0]);
-		}
+		  String message = "";
+		 for (int i=1; i < args.length; ++i) {
+		 	message += args[i] + " ";
+			}
+			chatImpl.post(cref, message);
+		} else if (args[0].equals("exit")) {
+			chatImpl.quit(cref); 
+		} else if (args[0].equals("game") && args.length > 1) {
+			String data = "";
+			for (int i=1; i < args.length; ++i) {
+				data += args[i] + " "; 
+			}
+		  chatImpl.game(cref, data);
+			}
 	}
 }
