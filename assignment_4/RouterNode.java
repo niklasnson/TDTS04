@@ -13,7 +13,7 @@ public class RouterNode {
 	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES];
 	private int[] route = new int[RouterSimulator.NUM_NODES];
   
-  private boolean poisonedReverse = false; 
+  private boolean poisonedReverse = true; 
 
   //--------------------------------------------------
   public RouterNode(int ID, RouterSimulator sim, int[] costs) {
