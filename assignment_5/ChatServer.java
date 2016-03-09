@@ -15,6 +15,7 @@ class ChatImpl extends ChatPOA
 		ArrayList<ChatCallback> teamEnlighten = new ArrayList<ChatCallback>(); 
 		ArrayList<ChatCallback> teamResistance = new ArrayList<ChatCallback>(); 
 	 	String [][] gameTable = new String[9][9];
+		boolean gameEnded = false; 
 
     private ORB orb;
 
@@ -75,9 +76,6 @@ class ChatImpl extends ChatPOA
 			}
 		}
 
-		public void quit(ChatCallback callobj) {
-		}
-
 		public void game(ChatCallback callobj, String data) {
 			String args[] = data.split(" "); 
 			if (args[0].equals("join") && args.length > 1) {
@@ -87,14 +85,28 @@ class ChatImpl extends ChatPOA
 				int y = Integer.parseInt(args[2]); 
 				if (x > -1 && x < 9 && y > -1 && y < 9 && gameTable[x][y] == null)
 				{
-						gameTable[x][y] = getSymbol(callobj);
+				  gameTable[x][y] = getSymbol(callobj);
+				  gameEnded = hasWon(y, x);
 				}
 				renderTable();
 			}
 		}
 
-		private boolean hasWon() {
- 			return false; 	
+		private boolean hasWon(int y, int x) {
+		  return isLinear(x, y, 1, 0) ||
+			 isLinear(x, y, 0, 1) ||
+			 isLinear(x, y, 1, 1) ||
+			 isLinear(x, y, 1, -1); 	
+		}
+
+		private  boolean isLinear(int x, int y, int stepX, int stepY) {
+		  String startValue = gameTable[y][x];
+		  for (int i=0; i < 10; ++i) {
+		    if (gameTable[y+i*stepY][x+i*stepX] != startValue)
+		      System.out.println(" === " + gameTable[y+i*stepY][x+i*stepX]);
+		      return false;
+		  }
+		  return true;	
 		}
 
 		private void assignTeam(ChatCallback callobj, String team) {
@@ -132,8 +144,11 @@ class ChatImpl extends ChatPOA
 				}
 				stringBuilder.append("\n");
 			}
-			if (hasWon()) {
-				stringBuilder.append("We have a winner!"); 
+			if (gameEnded) {
+				stringBuilder.append("We have a winner!");
+				stringBuilder.append("\n Game over!"); 
+				//resetGamestate(); 
+				gameEnded = false;  
 			}
 
 			for (int i=0; i < teamResistance.size(); ++i)
@@ -148,6 +163,16 @@ class ChatImpl extends ChatPOA
 				reciv.callback(stringBuilder.toString());
 			}
 		}
+
+	      private void resetGamestate() {
+		for (int y=0; y < 9; ++y) 
+		{
+		  for (int x=0; x < 9; ++x)
+		  {
+		    gameTable[y][x] = null;  
+		  }
+		}
+	      }
 
 }
 

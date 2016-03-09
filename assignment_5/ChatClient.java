@@ -98,7 +98,7 @@ public class ChatClient
 			}
 			chatImpl.post(cref, message);
 		} else if (args[0].equals("exit")) {
-			chatImpl.quit(cref); 
+		    System.exit(0);	
 		} else if (args[0].equals("game") && args.length > 1) {
 			String data = "";
 			for (int i=1; i < args.length; ++i) {
