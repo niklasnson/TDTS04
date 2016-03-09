@@ -10,8 +10,8 @@ public class RouterNode {
   private int infinity = RouterSimulator.INFINITY;
   private int num_network_nodes = RouterSimulator.NUM_NODES;
   private int[] costs = new int[RouterSimulator.NUM_NODES];
-	private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES];
-	private int[] route = new int[RouterSimulator.NUM_NODES];
+  private int[][] table = new int[RouterSimulator.NUM_NODES][RouterSimulator.NUM_NODES];
+  private int[] route = new int[RouterSimulator.NUM_NODES];
   
   private boolean poisonedReverse = true; 
 
@@ -88,7 +88,8 @@ public class RouterNode {
 
     for (int i=0; i < num_network_nodes; ++i)
     {
-			// if we are on current node or if current node is destination just keep rocking! 
+      // if we are on current node or if current node is destination just keep rocking!
+      // we dont need the cost to ourself.  
       if (i == myID || i == dest)
         continue;
 
