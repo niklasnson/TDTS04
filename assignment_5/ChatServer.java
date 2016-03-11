@@ -15,6 +15,7 @@ class ChatImpl extends ChatPOA
 		ArrayList<ChatCallback> teamEnlighten = new ArrayList<ChatCallback>(); 
 		ArrayList<ChatCallback> teamResistance = new ArrayList<ChatCallback>(); 
 	 	String [][] gameTable = new String[9][9];
+		int wincon = 5; 
 		boolean gameEnded = false; 
 
     private ORB orb;
@@ -81,34 +82,39 @@ class ChatImpl extends ChatPOA
 			if (args[0].equals("join") && args.length > 1) {
 				assignTeam(callobj, args[1]);
 			} else if (args[0].equals("hack") && args.length > 1 ) {
-				int x = Integer.parseInt(args[1]);
-				int y = Integer.parseInt(args[2]); 
+				int y = Integer.parseInt(args[1]) - 1;
+				int x = Integer.parseInt(args[2]) - 1; 
 				if (x > -1 && x < 9 && y > -1 && y < 9 && gameTable[x][y] == null)
 				{
-				  gameTable[x][y] = getSymbol(callobj);
-				  gameEnded = hasWon(y, x);
+				  gameTable[y][x] = getSymbol(callobj);
+				  gameEnded = checkWin(y, x);
 				}
 				renderTable();
 			}
 		}
 
-		private boolean hasWon(int y, int x) {
-		  return isLinear(x, y, 1, 0) ||
-			 isLinear(x, y, 0, 1) ||
-			 isLinear(x, y, 1, 1) ||
-			 isLinear(x, y, 1, -1); 	
-		}
+		public boolean checkWin(int y, int x) {
+		
+			// vi får en kordinat ; vi tittar på denna för att få veta vad vi skall leta efter
+			
+			String teamSym = gameTable[y][x];
+			int inarow = 0; 
 
-		private  boolean isLinear(int x, int y, int stepX, int stepY) {
-		  String startValue = gameTable[y][x];
-		  for (int i=0; i < 10; ++i) {
-		    if (gameTable[y+i*stepY][x+i*stepX] != startValue)
-		      System.out.println(" === " + gameTable[y+i*stepY][x+i*stepX]);
-		      return false;
-		  }
-		  return true;	
+			// horzientalt check 
+			// snurra från pos 0;0 -> 0;9 om nästa = deta vi letar efter = fortsätt; när vi har hittat
+			// 5 st vunnet!
+			
+			for (int i=0; i < 10; i++) 
+			{
+				if (gameTable[y][i] != null && gameTable[y][i] == teamSym) inarow++;
+				else inarow = 0; 
+				if (inarow == 5) return true; 
+			}
+			inarow =0;
+			return false; 
 		}
-
+		
+		
 		private void assignTeam(ChatCallback callobj, String team) {
 			boolean success = false; 
 			if (team.equals("enl"))  {
@@ -138,6 +144,7 @@ class ChatImpl extends ChatPOA
 				for (int x=0; x < 9; ++x) 
 				{
 					if (gameTable[y][x] == null) 
+
 						stringBuilder.append("* ");
 					else
 						stringBuilder.append(gameTable[y][x] + " ");
